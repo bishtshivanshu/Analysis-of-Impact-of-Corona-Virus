@@ -1,0 +1,159 @@
+--In this project we are going to analyse the impact that corona viruse has made humans in various ascpects.
+--The code below is made on the BigQuery by Google which uses mysql language.
+-- Datasets
+-- Covid death table - https://drive.google.com/file/d/1vpwGbkXKm6NF_hNTL6PZS537YB1NDsPs/view?usp=sharing
+--Covid vaccination table - https://drive.google.com/file/d/1_6Hb2Rv14d8Rd2q4UV4S5TPHmLA1Ffhp/view?usp=sharing
+
+--Quey Number 1
+--Looking at Covid Deaths Table
+SELECT 
+*
+FROM 
+`agile-charger-311310.Project_corona.covid_death`
+ORDER BY 
+3,4
+
+--Quey Number 2
+--Looking at Covid Vaccination Table
+SELECT 
+*
+FROM 
+`agile-charger-311310.Project_corona.covid_vaccination`
+ORDER BY 
+3,4
+
+
+--Quey Number 3
+--Looking at Total Cases, Total Deaths and Death Percentage by Date and Country.
+--Shows the liklehood of dying if you contract covid in your country.
+SELECT 
+location, date, total_cases, total_deaths, (total_deaths/ total_cases ) * 100 as Death_percentage
+FROM 
+`agile-charger-311310.Project_corona.covid_death`
+WHERE 
+continent is not null 
+ORDER BY
+1,2
+
+--Quey Number 4
+--Lokking at Total Case, Population and Death Percentage of Population.
+SELECT 
+location, date, total_cases, population, (total_cases/ population ) * 100 as Death_population_percentage
+FROM 
+`agile-charger-311310.Project_corona.covid_death`
+WHERE 
+continent is not null 
+ORDER BY 
+1,2
+
+--Quey Number 4 
+--Looking at Infected Population Percentage of different Countries.
+SELECT 
+location, population, max(total_cases) as Total_cases,  (max(total_cases)/ population ) * 100 as Infected_population_percentage
+FROM 
+`agile-charger-311310.Project_corona.covid_death`
+WHERE 
+continent is not null 
+GROUP BY 
+location, population
+ORDER BY 
+1,2
+
+--Quey Number 5 
+--Looking at Death Population Percentage of different Countries.
+SELECT 
+location, population, max(total_deaths) as Total_deaths,  (max(total_deaths)/ population ) * 100 as Death_population_percentage
+FROM 
+`agile-charger-311310.Project_corona.covid_death`
+WHERE 
+continent is not null 
+GROUP BY 
+location, population
+ORDER BY 
+1,2
+
+--Quey Number 6 
+--Looking at total Deaths in different continents.
+SELECT 
+continent, max(total_deaths) as Total_deaths
+FROM 
+`agile-charger-311310.Project_corona.covid_death`
+WHERE 
+continent is not null 
+GROUP BY 
+continent
+ORDER BY
+1 desc
+
+
+--Quey Number 7 
+--Looking at New daily cases, New daily deaths and Daily death percentage around world by Date.
+SELECT 
+date, SUM(new_cases) as New_dialy_cases , SUM(new_deaths) as New_dialy_deaths , (SUM(new_deaths)/SUM(new_cases)) *100 as Daily_death_percentage
+FROM 
+`agile-charger-311310.Project_corona.covid_death`
+WHERE 
+continent is not null
+Group by 
+date
+order by 
+1
+
+
+--Quey Number 8 
+--Looking at New Vaccinations count and Daily New Total New Vaccinations count by Continent, Country, Date.
+SELECT cd.continent, cd.location, cd.date, cd.population, cv.new_vaccinations, 
+Sum(cv.new_vaccinations) OVER (PARTITION BY cd.location ORDER BY  cd.location, cd.date) as Rolling_people_vaccinated
+FROM 
+`agile-charger-311310.Project_corona.covid_death` as cd
+JOIN 
+`agile-charger-311310.Project_corona.covid_vaccination` as cv
+ON 
+cd.location = cv.location 
+AND cd.date = cv.date
+WHERE 
+cd.continent is not null 
+order by 
+1,2,3
+
+--Quey Number 9
+----Looking at New Vaccinations count, Daily New Total New Vaccinations count and Daily New Total New Vaccinations percentage of polpulation by Continent, Country, Date using CTE.
+With populaton_vs_vaccination
+as
+(
+SELECT cd.continent, cd.location, cd.date, cd.population, cv.new_vaccinations, 
+Sum(cv.new_vaccinations) OVER (PARTITION BY cd.location ORDER BY  cd.location, cd.date) as Rolling_people_vaccinated
+FROM 
+`agile-charger-311310.Project_corona.covid_death` as cd
+JOIN 
+`agile-charger-311310.Project_corona.covid_vaccination` as cv
+ON 
+cd.location = cv.location 
+AND cd.date = cv.date
+WHERE 
+cd.continent is not null 
+)
+
+SELECT 
+*, (Rolling_people_vaccinated/ population)*100 as Rolling_people_vaccinated_percentage
+FROM 
+populaton_vs_vaccination
+
+
+--Quey Number 10
+--Creating View of table containing Population, New Vaccinations and Daily New Total New Vaccinations by Date, Country and Continent.
+CREATE VIEW agile-charger-311310.Project_corona.percentage_population_vaccinated as
+SELECT cd.continent, cd.location, cd.date, cd.population, cv.new_vaccinations, 
+Sum(cv.new_vaccinations) OVER (PARTITION BY cd.location ORDER BY  cd.location, cd.date) as Rolling_people_vaccinated
+FROM 
+`agile-charger-311310.Project_corona.covid_death` as cd
+JOIN 
+`agile-charger-311310.Project_corona.covid_vaccination` as cv
+ON 
+cd.location = cv.location 
+AND cd.date = cv.date
+WHERE 
+cd.continent is not null 
+
+
+
