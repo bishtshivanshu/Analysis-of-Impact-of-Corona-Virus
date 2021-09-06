@@ -156,4 +156,6 @@ WHERE
 cd.continent is not null 
 
 
+--Tableau Visualization of some of the above queries' result - https://public.tableau.com/views/ImpactofCoronaVirus/Dashboard1?:language=en-US&:display_count=n&:origin=viz_share_link
+
 
